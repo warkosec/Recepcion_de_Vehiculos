@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Recepciones de Vehículos{% endblock %}
+
+{% block content %}
+<h1>Recepciones de Vehículos</h1>
+
+<form method="POST" action="{{ url_for('receptions') }}">
+    <div class="form-group">
+        <label for="search">Buscar por Placa:</label>
+        <input type="text" id="search" name="search" class="form-control" placeholder="Ingrese la placa del vehículo">
+    </div>
+    <button type="submit" class="btn btn-primary">Buscar</button>
+</form>
+
+<table class="table table-striped mt-4">
+    <thead>
+        <tr>
+            <th>Placa</th>
+            <th>Modelo</th>
+            <th>Marca</th>
+            <th>Año</th>
+            <th>Cliente</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for reception in receptions %}
+        <tr>
+            <td>{{ reception.license_plate }}</td>
+            <td>{{ reception.model }}</td>
+            <td>{{ reception.brand }}</td>
+            <td>{{ reception.year }}</td>
+            <td>{{ reception.client.name }}</td>
+            <td>
+                <button class="btn btn-warning" onclick="openEditModal({{ reception.id }})">Modificar</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Modal para editar recepción -->
+<div id="editModal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modificar Recepción</h5>
+                <button type="button" class="close" onclick="closeModal()" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <div class="form-group">
+                        <label for="editLicensePlate">Placa:</label>
+                        <input type="text" id="editLicensePlate" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editModel">Modelo:</label>
+                        <input type="text" id="editModel" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editBrand">Marca:</label>
+                        <input type="text" id="editBrand" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editYear">Año:</label>
+                        <input type="text" id="editYear" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editClient">Cliente:</label>
+                        <input type="text" id="editClient" class="form-control">
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveReception()">Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentEditId = null;
+
+    // Función para abrir el modal de edición
+    function openEditModal(receptionId) {
+        currentEditId = receptionId;
+        const receptions = {{ receptions|tojson }};
+        const reception = receptions.find(r => r.id === receptionId);
+        document.getElementById('editLicensePlate').value = reception.license_plate;
+        document.getElementById('editModel').value = reception.model;
+        document.getElementById('editBrand').value = reception.brand;
+        document.getElementById('editYear').value = reception.year;
+        document.getElementById('editClient').value = reception.client.name;
+        document.getElementById('editModal').style.display = 'block';
+    }
+
+    // Función para guardar los cambios
+    function saveReception() {
+        const editedReception = {
+            id: currentEditId,
+            license_plate: document.getElementById('editLicensePlate').value,
+            model: document.getElementById('editModel').value,
+            brand: document.getElementById('editBrand').value,
+            year: document.getElementById('editYear').value,
+            client: { name: document.getElementById('editClient').value }
+        };
+
+        fetch('{{ url_for('update_reception') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(editedReception)
+        }).then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  location.reload();
+              } else {
+                  alert('Error al guardar la recepción');
+              }
+          });
+        
+        closeModal();
+    }
+
+    // Función para cerrar el modal
+    function closeModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Ver Vehículos{% endblock %}
+
+{% block content %}
+<h1>Lista de Vehículos</h1>
+<ul>
+    {% for vehicle in vehicles %}
+    <li>{{ vehicle.brand }} {{ vehicle.model }} ({{ vehicle.year }}) - Placa: {{ vehicle.license_plate }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

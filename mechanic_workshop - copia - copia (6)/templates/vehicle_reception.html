@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Recepción de Vehículo{% endblock %}
+
+{% block content %}
+<h1>Recepción de Vehículo</h1>
+<form id="receptionForm" action="{{ url_for('search_client') }}" method="POST">
+    <label for="client_search">Buscar Cliente:</label>
+    <select id="client_search" name="client_search" class="select2" required>
+        <option value="">Seleccione un cliente</option>
+        {% for client in clients %}
+            <option value="{{ client.name }}">{{ client.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Buscar</button>
+</form>
+
+<form id="vehicleForm" action="{{ url_for('search_vehicle') }}" method="POST">
+    <label for="vehicle_search">Buscar Vehículo:</label>
+    <select id="vehicle_search" name="vehicle_search" class="select2" required>
+        <option value="">Seleccione un vehículo</option>
+        {% for vehicle in vehicles %}
+            <option value="{{ vehicle.license_plate }}">{{ vehicle.brand }} {{ vehicle.model }} ({{ vehicle.license_plate }})</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Buscar</button>
+</form>
+
+<form id="detailsForm">
+    <div class="form-section">
+        <div class="form-group">
+            <label for="priority">Prioridad:</label>
+            <select id="priority" name="priority" required>
+                <option value="Alta">Alta</option>
+                <option value="Media" selected>Media</option>
+                <option value="Baja">Baja</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="area">Área:</label>
+            <select id="area" name="area" required>
+                <option value="Entrada">Entrada</option>
+                <option value="Domicilio">Domicilio</option>
+                <option value="Reparación">Reparación</option>
+                <option value="Salida">Salida</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="status">Estado:</label>
+            <select id="status" name="status" required>
+                <option value="Chequeo">Chequeo</option>
+                <option value="Sin Estado" selected>Sin Estado</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="work">Trabajo:</label>
+            <textarea id="work" name="work" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="general_status">Estado General:</label>
+            <textarea id="general_status" name="general_status"></textarea>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-group">
+            <label for="diagnosis">Diagnóstico:</label>
+            <select id="diagnosis" name="diagnosis" required>
+                <option value="Sí">Sí</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="warranty">Garantía:</label>
+            <select id="warranty" name="warranty" required>
+                <option value="Sí">Sí</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="mileage">Kilometraje:</label>
+            <input type="number" id="mileage" name="mileage" required>
+        </div>
+        <div class="form-group">
+            <label for="promised_date">Fecha Prometida:</label>
+            <input type="date" id="promised_date" name="promised_date" required>
+        </div>
+        <div class="form-group">
+            <label for="budget">Presupuesto:</label>
+            <input type="number" id="budget" name="budget" required>
+        </div>
+        <div class="form-group">
+            <label for="advance">Adelanto:</label>
+            <input type="number" id="advance" name="advance" required>
+        </div>
+    </div>
+
+    <div class="form-group button-group">
+        <button type="button" onclick="validateForms()">Firmar</button>
+    </div>
+</form>
+
+<!-- Popup de Firma -->
+<div id="signaturePopup" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Firma de Recepción</h5>
+                <button type="button" class="close" onclick="hideSignaturePopup()" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Términos y condiciones de la recepción del vehículo...</p>
+                <canvas id="signatureCanvas" width="500" height="200"></canvas>
+                <input type="hidden" id="signature" name="signature">
+                <p>Nombre del Cliente: <span id="client_name"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideSignaturePopup()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveSignature()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Función para validar todos los formularios antes de mostrar el popup de firma
+    function validateForms() {
+        var receptionForm = document.getElementById('receptionForm');
+        var vehicleForm = document.getElementById('vehicleForm');
+        var detailsForm = document.getElementById('detailsForm');
+
+        if (receptionForm.checkValidity() && vehicleForm.checkValidity() && detailsForm.checkValidity()) {
+            showSignaturePopup();
+        } else {
+            alert('Por favor, complete todos los campos obligatorios antes de firmar.');
+        }
+    }
+
+    function searchClient() {
+        var clientName = document.getElementById('client_search').value;
+        fetch(`/search_client?name=${clientName}`)
+            .then(response => response.json())
+            .then(data => {
+                var clientSelect = document.getElementById('client_id');
+                clientSelect.innerHTML = ''; // Limpiar opciones previas
+                data.clients.forEach(client => {
+                    var option = document.createElement('option');
+                    option.value = client.id;
+                    option.textContent = client.name;
+                    clientSelect.appendChild(option);
+                });
+            });
+    }
+
+    function searchVehicle() {
+        var vehiclePlate = document.getElementById('vehicle_search').value;
+        fetch(`/search_vehicle?plate=${vehiclePlate}`)
+            .then(response => response.json())
+            .then(data => {
+                var vehicleSelect = document.getElementById('vehicle_id');
+                vehicleSelect.innerHTML = ''; // Limpiar opciones previas
+                data.vehicles.forEach(vehicle => {
+                    var option = document.createElement('option');
+                    option.value = vehicle.id;
+                    option.textContent = `${vehicle.license_plate} - ${vehicle.model}`;
+                    vehicleSelect.appendChild(option);
+                });
+            });
+    }
+
+    function showSignaturePopup() {
+        document.getElementById('signaturePopup').style.display = 'block';
+    }
+
+    function hideSignaturePopup() {
+        document.getElementById('signaturePopup').style.display = 'none';
+    }
+
+    function saveSignature() {
+        var canvas = document.getElementById('signatureCanvas');
+        var signature = canvas.toDataURL('image/png');
+        document.getElementById('signature').value = signature;
+        hideSignaturePopup();
+        document.querySelector('form').submit();
+    }
+
+    // Código para inicializar el canvas y capturar la firma
+    var canvas = document.getElementById('signatureCanvas');
+    var ctx = canvas.getContext('2d');
+    var drawing = false;
+
+    function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    }
+
+    canvas.addEventListener('mousedown', function(evt) {
+        drawing = true;
+        var mousePos = getMousePos(canvas, evt);
+        ctx.beginPath();
+        ctx.moveTo(mousePos.x, mousePos.y);
+    });
+
+    canvas.addEventListener('mousemove', function(evt) {
+        if (drawing) {
+            var mousePos = getMousePos(canvas, evt);
+            ctx.lineTo(mousePos.x, mousePos.y);
+            ctx.stroke();
+        }
+    });
+
+    canvas.addEventListener('mouseup', function() {
+        drawing = false;
+    });
+
+    canvas.addEventListener('mouseout', function() {
+        drawing = false;
+    });
+</script>
+{% endblock %}
