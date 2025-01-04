@@ -100,7 +100,8 @@ def logout():
 @app.route('/')
 @login_required
 def vehicle_reception():
-    return render_template('vehicle_reception.html')
+    clients = Client.query.all()
+    return render_template('vehicle_reception.html', clients=clients)
 
 @app.route('/add_client', methods=['GET', 'POST'])
 @login_required

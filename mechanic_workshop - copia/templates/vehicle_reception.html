@@ -8,10 +8,16 @@
     <form class="form-box" action="{{ url_for('vehicle_reception') }}" method="POST">
         <div class="form-section">
             <div class="form-group">
-                <label for="client_search">Buscar Cliente:</label>
-                <input type="text" id="client_search" name="client_search" placeholder="Nombre del Cliente">
-                <button type="button" onclick="searchClient()">Buscar</button>
-                <select id="client_id" name="client_id" required>
+              <form action="{{ url_for('search_client') }}" method="POST">
+    <label for="client_search">Buscar Cliente:</label>
+    <select id="client_search" name="client_search" class="select2" required>
+        <option value="">Seleccione un cliente</option>
+        {% for client in clients %}
+            <option value="{{ client.name }}">{{ client.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Buscar</button>
+</form>
                     <!-- Opciones de cliente se llenarán con los resultados de búsqueda -->
                 </select>
             </div>
